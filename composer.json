@@ -1,0 +1,23 @@
+{
+    "name": "sqf/files",
+    "description": "Offers a smooth interface for handling multiple file types",
+    "keywords": ["files", "image", "csv", "json"],
+    "homepage": "http://github.com/dasiux/sqf-files",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Daniel Hartwell",
+            "email": "me@siux.info",
+            "homepage": "http://www.siux.info"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=5.6.0"
+    },
+    "require-dev": {},
+    "autoload": {
+        "psr-4": {"": "src/"}
+    }
+}
