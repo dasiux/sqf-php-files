@@ -10,9 +10,9 @@
     namespace sqf\files;
     use sqf\files\exception;
     use sqf\files\handler as fsh;
-    use sqf\files\file;
+    use sqf\files\base;
 
-    class image extends file {
+    class image extends base {
 
     /** @var boolean $virtual Virtual image mode */
         protected $virtual = false;
@@ -22,10 +22,9 @@
      *
      * @param string $path
      * @param string $content
+     * @param array  $options
      *
      * @throws \sqf\files\exception
-     *
-     * @return object|\sqf\files\file
      */
         public function __construct ($path,$content=null,array $options=[]) {
             // Add gettable properties
@@ -52,7 +51,7 @@
      * Create/replace actual file
      *
      * @param string $path
-     * @param string $content
+     * @param mixed  $content
      * @param array  $options
      *
      * @throws \sqf\files\exception
@@ -98,6 +97,19 @@
         }
 
     /**
+     * Initialize
+     *
+     * @param string $path
+     * @param string $content
+     * @param array  $options
+     *
+     * @return void
+     */
+        protected function initialize ($path,$content=null,array $options=[]) {
+            $this->setPathInfo($path,$options,true);
+        }
+
+    /**
      * Set mimetype from extension and options
      *
      * @param array $options
@@ -122,10 +134,42 @@
         }
 
     /**
-     * Create image from array
+     * Create image from path
      *
      * @param string $content
      * @param array  $options
+     *
+     * @throws \sqf\files\exception
+     *
+     * @return boolean
+     */
+        protected function createImageFromPath ($content,array $options=[]) {
+            // Validate path
+            fsh::exists($content,true);
+        }
+
+    /**
+     * Create image from resource
+     *
+     * @param resource $content
+     * @param array    $options
+     *
+     * @throws \sqf\files\exception
+     *
+     * @return boolean
+     */
+        protected function createImageFromResource ($content,array $options=[]) {
+            // Validate resource
+            if (!is_resource($content)||get_resource_type($content)!='gd') {
+                throw new exception(fsh::error(fsh::E_PARAMETER_TYPE,['param'=>'$content','type'=>'gd resource']),fsh::E_PARAMETER_TYPE);
+            }
+        }
+
+    /**
+     * Create image from array
+     *
+     * @param array $content
+     * @param array $options
      *
      * @throws \sqf\files\exception
      *
@@ -202,13 +246,15 @@
      * @param string $target
      * @param array  $options
      *
+     * @throws \sqf\files\exception
+     *
      * @return boolean
      */
         protected function openResource ($target=null,array $options=[]) {
             // Set new path info and option
             if (is_string($target)) {
-                setPathInfo($target,$options);
-                setMimetype($options);
+                $this->setPathInfo($target,$options);
+                $this->setMimetype($options);
             }
 
             // Get reader
@@ -238,13 +284,15 @@
      * @param string $target
      * @param array  $options
      *
+     * @throws \sqf\files\exception
+     *
      * @return boolean
      */
         protected function writeResource ($target=null,array $options=[]) {
             // Set new path info and option
             if (is_string($target)) {
-                setPathInfo($target,$options);
-                setMimetype($options);
+                $this->setPathInfo($target,$options);
+                $this->setMimetype($options);
             }
 
             // Get writer
@@ -315,6 +363,19 @@
         public function write ($target=null,array $options=[]) {
             if (isset($this->resource)) {
                 $this->writeResource($target,$options);
+            }
+            return $this;
+        }
+
+    /**
+     * Close file resource
+     *
+     * @return object|\sqf\files\file
+     */
+        public function close () {
+            if (isset($this->resource)) {
+                $this->closeResource();
+                $this->resource = null;
             }
             return $this;
         }

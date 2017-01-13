@@ -218,7 +218,6 @@
 
             // Row labels
             if ($style['rowlabel']) {
-                $labels = [];
                 $x = 0;
                 foreach ($data as $i => $row) {
                     if (!$x&&$style['collabel']) {
@@ -484,7 +483,7 @@
                     if (strlen($val)==strlen((int)$val)) {return $val.'.0';}
                     return $val;
                 case 'boolean':return ($val?'true':'false');
-                case 'array':return static::table($val);
+                case 'array':return static::drawTable($val);
                 default:
                     throw new exception(fsh::error(fsh::E_PARAMETER_TYPE,['param'=>'$val for row '.$row.' col '.$col,'type'=>'string|integer|float|boolean|array not '.$type]),fsh::E_PARAMETER_TYPE);
             }

@@ -39,10 +39,9 @@
      *
      * @param string $path
      * @param string $content
+     * @param array  $options
      *
      * @throws \sqf\files\exception
-     *
-     * @return object|\sqf\files\file
      */
         public function __construct ($path,$content=null,array $options=[]) {
             // Check path
@@ -249,7 +248,8 @@
 
                 // Unsafe replace value
                 if ($method===true) {
-                    return $this->$name = $value;
+                    $this->$name = $value;
+                    return;
                 } else {
 
                     // Set value by method or function

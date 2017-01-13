@@ -10,6 +10,7 @@
     namespace sqf\files;
     use finfo;
     use sqf\files\exception;
+    use sqf\files\base;
 
     class handler {
 
@@ -32,6 +33,7 @@
             }
 
             if ($path[0]!=DIRECTORY_SEPARATOR) {
+                if ($path[0]=='.') {$path = substr($path,(1+strlen(DIRECTORY_SEPARATOR)));}
                 return static::$wd.$path;
             }
             return $path;
@@ -165,7 +167,7 @@
     /**
      * Get uploaded file
      *
-     * @param string $uploaded
+     * @param array  $uploaded
      * @param string $path
      * @param array  $options
      *
@@ -251,9 +253,11 @@
      *
      * @param mixed $content
      *
+     * @throws \sqf\files\exception
+     *
      * @return string|null
      */
-        public static function content2index ($content) {
+        public static function content2index (&$content) {
             $ct = gettype($content);
             switch ($ct) {
                 case 'string':
@@ -272,7 +276,7 @@
                         } else {
                             // xml object
                             // dom object
-                            throw new exception('Invalid content type object ('.$ct.')!',static::E_INVALID_CONTENT);
+                            throw new exception(static::error(static::E_PARAMETER_TYPE,['param'=>'$content','type'=>'string|__toString|__toArray|array|resource']),static::E_PARAMETER_TYPE);
                         }
                     }
                 case 'array':
@@ -286,7 +290,7 @@
                             $type = 'csv';
                             break;
                         } else {
-                            throw new exception('Invalid content type array ('.$ct.')!',static::E_INVALID_CONTENT);
+                            throw new exception(static::error(static::E_PARAMETER_TYPE,['param'=>'$content','type'=>'string|__toString|__toArray|array|resource']),static::E_PARAMETER_TYPE);
                         }
                     }
                 case 'resource':
@@ -394,14 +398,14 @@
     /**
      * Check for a file class by index or classname
      *
-     * @param object $subject
+     * @param \sqf\files\base $subject
      * @param string $class
      *
      * @throws \sqf\files\exception
      *
      * @return boolean
      */
-        public static function isClass (object $subject,$class='') {
+        public static function isClass (base $subject,$class='') {
             $class = static::getClass($class,true);
             return ($subject instanceof $class);
         }
@@ -495,17 +499,14 @@
      */
         public static function rename ($from,$to,array $options=[]) {
             // Check from
-            $exists_f = static::exists($from,true);
-
-            // Check to
-            $exists_t = static::exists($to);
+            static::exists($from,true);
 
             // Check replace path
-            if ($exists_t) {
+            if (static::exists($to)) {
                 if (static::getOption(static::O_FILE_REPLACE,$options)!==true) {
                     throw new exception(static::error(static::E_FILE_REPLACE,['file'=>$to]),static::E_FILE_REPLACE);
                 } else {
-                    unlink($path);
+                    unlink($to);
                 }
             }
 
@@ -529,17 +530,14 @@
      */
         public static function copy ($from,$to,array $options=[]) {
             // Check from
-            $exists_f = static::exists($from,true);
-
-            // Check to
-            $exists_t = static::exists($to);
+            static::exists($from,true);
 
             // Check replace path
-            if ($exists_t) {
+            if (static::exists($to)) {
                 if (static::getOption(static::O_FILE_REPLACE,$options)!==true) {
                     throw new exception(static::error(static::E_FILE_REPLACE,['file'=>$to]),static::E_FILE_REPLACE);
                 } else {
-                    unlink($path);
+                    unlink($to);
                 }
             }
 
@@ -562,7 +560,10 @@
      */
         public static function delete ($path,$throw=false) {
             $exists = static::exists($path,$throw);
-            return unlink($path);
+            if ($exists) {
+                return unlink($path);
+            }
+            return false;
         }
 
     /**
@@ -740,8 +741,6 @@
 
     /** @const E_FILE_READ       File read error */
         const E_FILE_READ       = 17;
-
-        #const E_FILE_CONTENT = 12;
 
     /** @var array $errors Verbose error messsages */
         protected static $errors = [
