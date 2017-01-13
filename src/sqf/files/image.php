@@ -41,7 +41,7 @@
             // Prevent init for virtual images not saved to disk
             if (fsh::getOption(fsh::O_IMAGE_VIRTUAL,$options)===true) {
                 $this->virtual = true;
-                $this->preventInit = true;
+                $this->initRequired = false;
             }
 
             // Run parent constructor
@@ -314,7 +314,7 @@
      */
         public function write ($target=null,array $options=[]) {
             if (isset($this->resource)) {
-                $this->writeResource($content,$options);
+                $this->writeResource($target,$options);
             }
             return $this;
         }

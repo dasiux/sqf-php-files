@@ -18,15 +18,17 @@ var_dump($_FILES);
 $basedir = dirname(__DIR__).DIRECTORY_SEPARATOR;
 require($basedir.'src/sqf/files/exception.php');
 require($basedir.'src/sqf/files/handler.php');
+require($basedir.'src/sqf/files/base.php');
 require($basedir.'src/sqf/files/file.php');
 require($basedir.'src/sqf/files/ascii.php');
 require($basedir.'src/sqf/files/image.php');
 
 use sqf\files\exception;
 use sqf\files\handler as fsh;
+use sqf\files\base;
 use sqf\files\file;
 use sqf\files\ascii;
-//use sqf\files\image;
+use sqf\files\image;
 
 /**
  * Set your working directory to ensure clean shutdown procedures
@@ -73,7 +75,7 @@ fsh::$wd = __DIR__.DIRECTORY_SEPARATOR;
  *
  * This will throw all of the previously mentioned exceptions
  */
-#var_dump(fsh::info('ascii.log'));
+var_dump(fsh::info('ascii.log'));
 
 /**
  * Open an existing log file
@@ -84,27 +86,27 @@ fsh::$wd = __DIR__.DIRECTORY_SEPARATOR;
  * Code:
  * Message:
  */
-#$file = fsh::open('ascii.log');
+$file = fsh::open('ascii.log');
 
 // Empty the file
-#$file->put('');
+$file->put('');
 
 // Append some default content
-#$file->append("#begin\n");
+$file->append("#begin\n");
 
 // Log something to file
-#$file->log('first log');
-#$file->log('second log');
+$file->log('first log');
+$file->log('second log');
 
 // Put file contents into a block and replace self
-#$file->put($file::drawBlock($file->content()));
+$file->put($file::drawBlock($file->content));
 
 // Append a table of data
-#$file->append($file::drawTable([
-    #['id'=>1,'name'=>'siux','email'=>'me@siux.info'],
-    #['id'=>2,'name'=>'email','email'=>'email@example.com'],
-    #['id'=>3,'name'=>'test','email'=>'test@test.com'],
-#]));
+$file->append($file::drawTable([
+    ['id'=>1,'name'=>'siux','email'=>'me@siux.info'],
+    ['id'=>2,'name'=>'email','email'=>'email@example.com'],
+    ['id'=>3,'name'=>'test','email'=>'test@test.com'],
+]));
 
 /**
  * Create a new temporary log file
@@ -115,11 +117,11 @@ fsh::$wd = __DIR__.DIRECTORY_SEPARATOR;
  * Code:
  * Message:
  */
-#$file = fsh::create('temp.log',null,[
-    #fsh::O_FILE_REPLACE=>true,
-    #fsh::O_FILE_TYPE=>'ascii',
-    #fsh::O_FILE_TEMP=>true,
-#]);
+$file = fsh::create('temp.log',null,[
+    fsh::O_FILE_REPLACE=>true,
+    fsh::O_FILE_TYPE=>'ascii',
+    fsh::O_FILE_TEMP=>true,
+]);
 
 /**
  * Create a new image
