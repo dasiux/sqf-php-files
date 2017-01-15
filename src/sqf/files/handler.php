@@ -51,7 +51,7 @@
      *
      * @throws \sqf\files\exception
      *
-     * @return object|\sqf\files\file
+     * @return \sqf\files\base
      */
         public static function create ($path,$content=null,array $options=[]) {
             // Check path
@@ -119,7 +119,7 @@
      *
      * @throws \sqf\files\exception
      *
-     * @return object|\sqf\files\file
+     * @return \sqf\files\base
      */
         public static function open ($path,array $options=[]) {
             // Get file info
@@ -146,7 +146,7 @@
      *
      * @throws \sqf\files\exception
      *
-     * @return object|\sqf\files\file
+     * @return \sqf\files\base
      */
         public static function createOrOpen ($path,$content=null,array $options=[]) {
             // Check source path
@@ -173,7 +173,7 @@
      *
      * @throws \sqf\files\exception
      *
-     * @return object|\sqf\files\file
+     * @return \sqf\files\base
      */
         public static function upload (array $uploaded,$path=null,array $options=[]) {
             // Validate upload data
@@ -425,7 +425,7 @@
     /**
      * Use local finfo object
      *
-     * @return object|\finfo
+     * @return \finfo
      */
         public static function finfo () {
             self::setfinfo();
@@ -480,7 +480,7 @@
      *
      * @throws \sqf\files\exception
      *
-     * @return object|\sqf\files\file
+     * @return \sqf\files\base
      */
         public static function move ($from,$to,array $options=[]) {
             return static::rename($from,$to,$options);
@@ -495,7 +495,7 @@
      *
      * @throws \sqf\files\exception
      *
-     * @return object|\sqf\files\file
+     * @return \sqf\files\base
      */
         public static function rename ($from,$to,array $options=[]) {
             // Check from
@@ -526,7 +526,7 @@
      *
      * @throws \sqf\files\exception
      *
-     * @return object|\sqf\files\file
+     * @return \sqf\files\base
      */
         public static function copy ($from,$to,array $options=[]) {
             // Check from
@@ -646,6 +646,14 @@
     /** @const O_IMAGE_VIRTUAL    Make image virtual, dont save to disk */
         const O_IMAGE_VIRTUAL    = 10;
 
+
+    /** @const O_IMAGE_FILTER_SIZE Set multiply filter resize */
+        const O_IMAGE_FILTER_SIZE = 11;
+
+
+    /** @const O_IMAGE_FILTER_SIZE_MODE Set multiply filter resize type */
+        const O_IMAGE_FILTER_SIZE_MODE = 12;
+
     /** @var array $optionDefaults Option default values */
         public static $optionDefaults = [
             0 => true,
@@ -659,6 +667,8 @@
             8 => null,
             9 => null,
             10 => false,
+            11 => true,
+            12 => 'stretch',
         ];
 
     /**
@@ -733,7 +743,7 @@
     /** @const E_PROPERTY_ACCESS Property access error */
         const E_PROPERTY_ACCESS = 14;
 
-    /** @const E_PROPERTY_VALUE  Property access error */
+    /** @const E_PROPERTY_VALUE  Property value error */
         const E_PROPERTY_VALUE  = 15;
 
     /** @const E_METHOD_ACCESS   Method access error */

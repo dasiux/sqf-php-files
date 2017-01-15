@@ -54,12 +54,12 @@ fsh::$wd = __DIR__.DIRECTORY_SEPARATOR;
 /**
  * This file exists and returns true
  */
-#var_dump(fsh::exists('ascii.log'));
+var_dump(fsh::exists('ascii.log'));
 
 /**
  * This file does not exist and returns false
  */
-#var_dump(fsh::exists('does_not_exist.file'));
+var_dump(fsh::exists('does_not_exist.file'));
 
 
 /**
@@ -108,6 +108,8 @@ $file->append($file::drawTable([
     ['id'=>3,'name'=>'test','email'=>'test@test.com'],
 ]));
 
+var_dump($file->content);
+
 /**
  * Create a new temporary log file
  *
@@ -135,7 +137,7 @@ $file = fsh::create('temp.log',null,[
 $image = fsh::create('temp.jpg',[
     'width'=>100,
     'height'=>100,
-    'color'=>[255,0,255]
+    'color'=>[255,255,0]
 ],[
     fsh::O_FILE_REPLACE=>true,
     fsh::O_FILE_TYPE=>'image',

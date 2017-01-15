@@ -277,7 +277,7 @@
 
     /**
      * Change file path
-     * used for setting path related properties
+     * used for changing file path
      *
      * @param string $name
      * @param mixed  $value
@@ -292,8 +292,30 @@
 
             // Current path
             $current = $this->getFullPath();
-            $ext = $fname = $value;
 
+            // Change value
+            $this->changePathValue($name,$value);
+
+            // Apply path changes
+            $new = $this->getFullPath();
+            if ($current!=$new) {
+                fsh::rename($current,$new);
+            }
+        }
+
+    /**
+     * Change file path value
+     * used for setting path related properties
+     *
+     * @param string $name
+     * @param mixed  $value
+     *
+     * @throws \sqf\files\exception
+     *
+     * @return void
+     */
+        protected function changePathValue ($name,$value) {
+            $ext = $fname = $value;
             switch ($name) {
 
                 // Change directory
@@ -334,9 +356,6 @@
                         $this->basename = $this->filename.(is_string($this->extension)&&strlen($this->extension)?'.'.$this->extension:'');
                     }
             }
-
-            // Apply path changes
-            fsh::rename($current,$this->getFullPath());
         }
 
     /**
@@ -348,7 +367,7 @@
      * @return string
      */
         protected function changeContent ($name,$value) {
-            if ($value!==null) {
+            if ($value!==null&&$value!=$this) {
                 return file_put_contents($this->getFullPath(),$value);
             }
             return file_get_contents($this->getFullPath());
@@ -360,23 +379,23 @@
     /**
      * Open file resource
      *
-     * @return object|\sqf\files\file
+     * @return \sqf\files\base
      */
         abstract public function open ();
 
     /**
      * Write to file resource
      *
-     * @param string $content
+     * @param mixed $content
      *
-     * @return object|\sqf\files\file
+     * @return \sqf\files\base
      */
         abstract public function write ($content=null);
 
     /**
      * Close file resource
      *
-     * @return object|\sqf\files\file
+     * @return \sqf\files\base
      */
         abstract public function close ();
 
@@ -391,7 +410,7 @@
      * @return string
      */
         public function getFullPath ($wdsafe=null) {
-            if (!is_bool($wdsafe)) {$wdsafe = $this->$wdsafemode;}
+            if (!is_bool($wdsafe)) {$wdsafe = $this->wdsafemode;}
             $p = (strlen($this->dirname)&&$this->dirname!='.'?$this->dirname.DIRECTORY_SEPARATOR:'').$this->basename;
             if ($wdsafe) {
                 return fsh::wdpath($p);
