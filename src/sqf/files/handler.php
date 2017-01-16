@@ -646,13 +646,14 @@
     /** @const O_IMAGE_VIRTUAL    Make image virtual, dont save to disk */
         const O_IMAGE_VIRTUAL    = 10;
 
-
     /** @const O_IMAGE_FILTER_SIZE Set multiply filter resize */
         const O_IMAGE_FILTER_SIZE = 11;
 
-
     /** @const O_IMAGE_FILTER_SIZE_MODE Set multiply filter resize type */
         const O_IMAGE_FILTER_SIZE_MODE = 12;
+
+    /** @const O_IMAGE_CLONE       Clone source image */
+        const O_IMAGE_CLONE       = 13;
 
     /** @var array $optionDefaults Option default values */
         public static $optionDefaults = [
@@ -669,6 +670,7 @@
             10 => false,
             11 => true,
             12 => 'stretch',
+            13 => true,
         ];
 
     /**

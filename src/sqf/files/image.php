@@ -256,10 +256,10 @@
             fsh::exists($content,true);
 
             // Get file
-            $file = fsh:open($content,$options);
+            $file = fsh::open($content,$options);
 
             // Invalid file type
-            if (!fsh:isClass($file,'image')) {
+            if (!fsh::isClass($file,'image')) {
                 throw new exception(fsh::error(fsh::E_PARAMETER_TYPE,['param'=>'$content','type'=>'image/jpeg|png|gif']),fsh::E_PARAMETER_TYPE);
             }
 
@@ -292,14 +292,33 @@
      *
      * @return boolean
      */
+        
         protected function createImageFromResource ($content,array $options=[]) {
             // Validate resource
             if (!is_resource($content)||get_resource_type($content)!='gd') {
                 throw new exception(fsh::error(fsh::E_PARAMETER_TYPE,['param'=>'$content','type'=>'gd resource']),fsh::E_PARAMETER_TYPE);
             }
 
-            // Set resource
-            $this->resource = $content;
+            // Clone
+            if (fsh::getOption(fsh::O_IMAGE_CLONE,$options)===true) {
+                // Set resource
+                $r = imagecreatetruecolor(($w = imagesx($content)),($h = imagesy($content)));
+                if ($r) {
+                    $this->resource = $r;
+                }
+
+                // Failed resource
+                if (!isset($this->resource)) {return false;}
+
+                // Clone image
+                if (!$this->gd_imagecopy($content,0,0,0,0,$w,$h)) {
+                    throw new exception(fsh::error(fsh::E_FILE_COPY,['from'=>'resource #'.intval($content),'to'=>$this->getFullPath()]),fsh::E_FILE_COPY);
+                }
+            } else {
+                // Use supplied
+                $this->resource = $content;
+            }
+
             return true;
         }
 
