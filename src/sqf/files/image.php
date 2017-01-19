@@ -526,114 +526,156 @@
             return $this;
         }
 
-        // Calculate new width
-        protected function resizeCalcWidth ($orig_width,$orig_height,$upsize_height) {
-            return round($orig_width/($orig_height/$upsize_height));
+    /**
+     * Calculate orientation from width and height
+     *
+     * @param integer $w
+     * @param integer $h
+     *
+     * @return integer
+     */
+        public static function calc_orientation ($w,$h) {
+            return ($w==$h?0:($w>$h?-1:1));
         }
 
-        // Calculate new height
-        protected function resizeCalcHeight ($orig_height,$orig_width,$upsize_width) {
-            return round($orig_height/($orig_width/$upsize_width));
+    /**
+     * Calculate relative size
+     *
+     * @param integer $src_val
+     * @param integer $src_opposite
+     * @param integer $target_val
+     * @param integer $target_opposite
+     *
+     * @return integer
+     */
+        public static function calc_relative_size ($src_val,$src_opposite,$target_val,$target_opposite) {
+            if (!$target_opposite) {return $target_val;}
+            return round($src_val/($src_opposite/$target_opposite));
         }
 
-        // Resize image
-        public function resize ($width=0,$height=0,$type='fit') {
-            // Valid resource available
-            if (!is_resource($this->resource)) {trigger_error('Requires a valid image to be loaded!',E_USER_ERROR);}
-            // Validate input
-            if (isset($width)&&!is_int($width)) {trigger_error('Width must be an interger!',E_USER_ERROR);}
-            if (isset($height)&&!is_int($height)) {trigger_error('Height must be an interger!',E_USER_ERROR);}
-            if (isset($width)&&$width<1&&isset($height)&&$height<1) {trigger_error('At least one (width or height) dimension is required!',E_USER_ERROR);}
+    /**
+     * Calculate resize dimensions
+     * stretch: forces the size, ignores aspect ratio
+     * max: sizes into the given box and maintains aspect ratio
+     * min: sizes to a minimum of the given box and maintains aspect ratio
+     *
+     * @param integer $w
+     * @param integer $h
+     * @param integer $ow
+     * @param integer $oh
+     * @param string  $mode
+     * @param boolean $enlarge
+     *
+     * @return array
+     */
+        public static function calc_resize ($w=0,$h=0,$ow=0,$oh=0,$mode='max',$enlarge=false) {
+            $w = intval($w);
+            $h = intval($h);
+            if ($w==0&&$h==0) {return [$ow,$oh];}
+
+            // Stretch mode
+            if ($mode=='stretch') {
+                return [($w?$w:$h),($h?$h:$w)];
+            }
+
+            // Min and Max mode
+            $rw = static::calc_relative_size($ow,$oh,$w,$h);
+            $rh = static::calc_relative_size($oh,$ow,$h,$w);
+            $case = (!$h?'width':(!$w?'height':'both'));
+            switch ($case) {
+                case 'width':$rw = $w;break;
+                case 'height':$rh = $h;break;
+                default:
+                    if (($mode=='max'&&$rw<$w)||($mode=='min'&&$rw>$w)) {
+                        $rh = $h;
+                    } else {
+                        $rw = $w;
+                    }
+
+            }
+            if (!$enlarge) {
+                if ($rw>$ow||$rh>$oh) {
+                    $rw = $ow;
+                    $rh = $oh;
+                }
+            }
+            return [$rw,$rh];
+        }
+
+    /**
+     * Resize image
+     *
+     * @param integer $width
+     * @param integer $height
+     * @param array   $options
+     *
+     * @throws \sqf\files\exception
+     *
+     * @return boolean
+     */
+        public function resize ($width=null,$height=null,array $options=[]) {
+            // Check width
+            if (isset($width)&&!is_int($width)) {
+                throw new exception(fsh::error(fsh::E_PARAMETER_TYPE,['param'=>'$width','type'=>'integer']),fsh::E_PARAMETER_TYPE);
+            }
+
+            // Check height
+            if (isset($height)&&!is_int($height)) {
+                throw new exception(fsh::error(fsh::E_PARAMETER_TYPE,['param'=>'$height','type'=>'integer']),fsh::E_PARAMETER_TYPE);
+            }
+
+            // Requires at least one sizing value larger than 0
+            if (!(isset($width)&&isset($width))||(!$width&&!$height)) {
+                throw new exception(fsh::error(fsh::E_PARAMETER_TYPE,['param'=>'$width or $height','type'=>'integer and larger than 0']),fsh::E_PARAMETER_TYPE);
+            }
+
+            // Default params
             if (!isset($width)) {$width = 0;}
             if (!isset($height)) {$height = 0;}
-            $available_rules = array('fit','resize','stretch');
-            if (!is_string($type)||!in_array($type,$available_rules)) {trigger_error('Type must be one of the following: '.implode(',',$available_rules)."!",E_USER_ERROR);}
-            // Resizing required
-            $upsize = true;
-            // Actual size
-            $new_width = $orig_width = imagesx($this->resource);
-            $new_height = $orig_height = imagesy($this->resource);
-            // Check resizing
-            switch ($type) {
-                // Fit to dimensions / no upsizing
-                case 'fit':
-                    $upsize = false;
-                // Resize to dimensions
-                case 'resize':
-                    // Upsizing
-                    $upsize_width = ($upsize?$width:($orig_width<$width?$orig_width:$width));
-                    $upsize_height = ($upsize?$height:($orig_height<$height?$orig_height:$height));
-                    // No width
-                    if ($upsize_width==0) {
-                        $new_width = $this->resizeCalcWidth($orig_width,$orig_height,$upsize_height);
-                        $new_height = $upsize_height;
-                        // No height
-                    } elseif ($upsize_height==0) {
-                        $new_height = $this->resizeCalcHeight($orig_height,$orig_width,$upsize_width);
-                        $new_width = $upsize_width;
-                    } else {
-                        // Horizontal
-                        if ($orig_width>$orig_height) {
-                            $new_height = $this->resizeCalcHeight($orig_height,$orig_width,$upsize_width);
-                            $new_width = $upsize_width;
-                            // Oversized
-                            if ($new_height>$upsize_height) {
-                                $new_height = $upsize_height;
-                                $new_width = $this->resizeCalcWidth($orig_width,$orig_height,$upsize_height);
-                            }
-                            // Vertical
-                        } elseif ($orig_width<$orig_height) {
-                            $new_width = $this->resizeCalcWidth($orig_width,$orig_height,$upsize_height);
-                            $new_height = $upsize_height;
-                            // Oversized
-                            if ($new_width>$upsize_width) {
-                                $new_width = $upsize_width;
-                                $new_height = $this->resizeCalcHeight($orig_height,$orig_width,$upsize_width);
-                            }
-                        } else {
-                            // Horizontal
-                            if ($upsize_width>$upsize_height) {
-                                $new_width = $this->resizeCalcWidth($orig_width,$orig_height,$upsize_height);
-                                $new_height = $upsize_height;
-                                // Vertical
-                            } elseif ($upsize_width<$upsize_height) {
-                                $new_height = $this->resizeCalcHeight($orig_height,$orig_width,$upsize_width);
-                                $new_width = $upsize_width;
-                                // Square
-                            } else {
-                                $new_width = $upsize_width;
-                                $new_height = $upsize_height;
-                            }
-                        }
-                    }
-                    break;
-                // Stretch image to dimensions
-                case 'stretch':
-                    // Default square
-                    if ($width==0) {$width = $height;}
-                    if ($height==0) {$height = $width;}
-                    // Set values
-                    $new_width = $width;
-                    $new_height = $height;
-                    break;
-            }
+
+            // Get mode !!! mode to constant option values
+            $modes = ['stretch','min','max'];
+            $mode = fsh::getOption(fsh::O_IMAGE_RESIZE_MODE,$options);
+
+            // Get enlarge
+            $enlarge = fsh::getOption(fsh::O_IMAGE_RESIZE_ENLARGE,$options);
+
+            // Get resize transparent color
+            $alpha = static::validateColor(fsh::getOption(fsh::O_IMAGE_RESIZE_ALPHA,$options));
+
+            // Get actual size
+            $ow = $this->gd_imagesx();
+            $oh = $this->gd_imagesy();
+
+            // Get new size
+            $new_size = static::calc_resize($width,$height,$ow,$oh,$mode,$enlarge);
+
             // Create resized
-            $resized = imagecreatetruecolor($new_width,$new_height);
-            $bg = imagecolorallocatealpha($resized,255,255,255,127);
-            imagecolortransparent($resized,$bg);
-            imagealphablending($resized,false);
-            imagesavealpha($resized,true);
-            // Set resized
-            if (!imagecopyresampled($resized,$this->resource,0,0,0,0,$new_width,$new_height,$orig_width,$orig_height)) {
-                imagedestroy($resized);
-                trigger_error('Error resizing image!',E_USER_ERROR);
+            $resized = imagecreatetruecolor($new_size[0],$new_size[1]);
+
+            // Set alpha color index
+            if ($alpha&&($alpha = static::getColor($this->resource,$alpha))>0) {
+                imagecolortransparent($resized,$alpha);
+                imagealphablending($resized,false);
+                imagesavealpha($resized,true);
             }
+
+            // Copy to new source
+            if (!imagecopyresampled($resized,$this->resource,0,0,0,0,$new_size[0],$new_size[1],$ow,$oh)) {
+                imagedestroy($resized);
+                throw new exception(fsh::error(fsh::E_FILE_COPY,['from'=>'local resource','to'=>'local resource']),fsh::E_FILE_COPY);
+            }
+
+            // Unset and replace local resource
             imagedestroy($this->resource);
             $this->resource = $resized;
+
             return true;
         }
 
-        // Crop image by color
+    /**
+     * Crop by color
+     */
         public function crop ($color=NULL) {
             // Color input
             if (isset($color)) {
@@ -722,7 +764,9 @@
      * @param string|resource|\sqf\file\base $with
      * @param array $options
      *
-     * @return void
+     * @throws \sqf\files\exception
+     *
+     * @return boolean
      */
         function multiply ($with,array $options=[]) {
             // Open if not already
@@ -732,7 +776,7 @@
 
             // Get file path
             if (is_string($with)) {
-                $with = fsh::open($width);
+                $with = fsh::open($with);
             }
 
             // Get file resource
@@ -742,7 +786,7 @@
 
             // Check resource or file object
             if (!is_object($with)&&!fsh::isClass($with,'image')) {
-                throw new exception(fsh::error(fsh::E_PARAMETER_TYPE,['param'=>'$with','type'=>'']),fsh::E_PARAMETER_TYPE);
+                throw new exception(fsh::error(fsh::E_PARAMETER_TYPE,['param'=>'$with','type'=>'string|resource|image']),fsh::E_PARAMETER_TYPE);
             }
 
             // Local widht and height
@@ -750,12 +794,16 @@
             $h = $this->gd_imagesy();
 
             // Autosize filter image option
-            if (fsh::getOption(static::O_IMAGE_FILTER_SIZE,$options)==true&&($w!=$with->gd_imagesx()||$h!=$with->gd_imagesy())) {
-                $with->resize($w,$h,fsh::getOption(static::O_IMAGE_FILTER_SIZE_MODE,$options));
+            if (fsh::getOption(fsh::O_IMAGE_FILTER_SIZE,$options)==true&&($w!=$with->gd_imagesx()||$h!=$with->gd_imagesy())) {
+                $with->resize($w,$h,$options);
             }
+
+            // Get timelimit option
+            $timelimit = fsh::getOption(fsh::O_TIME_LIMIT,$options);
 
             // Run filter calculation
             for ($x = 0; $x<$w; ++$x) {
+                if ($timelimit) {set_time_limit($timelimit);}
                 for ($y = 0; $y<$h; ++$y) {
                     $TabColorsFlag = $this->gd_imagecolorsforindex($this->gd_imagecolorat($x,$y));
                     $TabColorsPerso = $with->gd_imagecolorsforindex($with->gd_imagecolorat($x,$y));
@@ -765,6 +813,8 @@
                     $this->gd_imagesetpixel($x,$y,$this->gd_imagecolorallocate($color_r,$color_g,$color_b));
                 }
             }
+
+            return true;
         }
 
     /**

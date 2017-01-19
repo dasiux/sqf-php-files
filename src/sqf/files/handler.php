@@ -650,10 +650,22 @@
         const O_IMAGE_FILTER_SIZE = 11;
 
     /** @const O_IMAGE_FILTER_SIZE_MODE Set multiply filter resize type */
-        const O_IMAGE_FILTER_SIZE_MODE = 12;
+        #const O_IMAGE_FILTER_SIZE_MODE = 12;
 
     /** @const O_IMAGE_CLONE       Clone source image */
         const O_IMAGE_CLONE       = 13;
+
+    /** @const O_TIME_LIMIT        Set operation cycle time limit */
+        const O_TIME_LIMIT        = 14;
+
+    /** @const O_IMAGE_RESIZE_MODE      */
+        const O_IMAGE_RESIZE_MODE = 15;
+
+    /** @const O_IMAGE_RESIZE_ENLARGE      */
+        const O_IMAGE_RESIZE_ENLARGE = 16;
+
+    /** @const O_IMAGE_RESIZE_ALPHA      */
+        const O_IMAGE_RESIZE_ALPHA = 17;
 
     /** @var array $optionDefaults Option default values */
         public static $optionDefaults = [
@@ -671,6 +683,10 @@
             11 => true,
             12 => 'stretch',
             13 => true,
+            14 => 300,
+            15 => 'max',
+            16 => false,
+            17 => [255,255,255,127],
         ];
 
     /**
