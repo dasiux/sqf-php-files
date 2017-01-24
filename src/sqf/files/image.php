@@ -673,24 +673,48 @@
             return true;
         }
 
+    /** @var array $colorIndex List of string indexes with rgba color arrays */
+        public static $colorIndex = [
+            'white'=>[255,255,255,0],
+            'black'=>[0,0,0,0],
+            'transparent'=>[0,0,0,127],
+        ];
+
     /**
      * Crop by color
+     *
+     * @param array $color
+     * @param array $options
+     *
+     * @throws \sqf\files\exception
+     *
+     * @return array
      */
-        public function crop ($color=NULL) {
+        public function crop (array $color=null,array $options=[]) {
             // Color input
             if (isset($color)) {
                 // String colors
                 if (is_string($color)) {
-                    switch ($color) {
-                        case 'white':$color = array(255, 255, 255, 0);break;
-                        case 'transparent':$color = array(0, 0, 0, 127);break;
-                        default:trigger_error(self::e_invalid_image_color,E_USER_WARNING);return;
+                    if (isset(static::$colorIndex[$color])) {
+                        $color = static::$colorIndex[$color];
+                    } else {
+                        $color = false;
                     }
                 }
-                // Validate color
-                if (!($color = $this->validateColor($color))) {trigger_error(self::e_invalid_image_color,E_USER_WARNING);}
+            } else {
                 // Default color
-            } else {$color = array(255,255,255,0);}
+                $color = static::$colorIndex['white'];
+            }
+
+            // Validate color
+            $color = $this->validateColor($color);
+            if (!$color) {
+                throw new exception(fsh::error(fsh::E_PARAMETER_TYPE,['param'=>'$color','type'=>'array or $colorIndex[string]']),fsh::E_PARAMETER_TYPE);
+            }
+
+            // Get timelimit option
+            $timelimit = fsh::getOption(fsh::O_TIME_LIMIT,$options);
+
             // Limits
             $px = 0;
             $reference = $this->getColor($this->resource,$color);
@@ -700,8 +724,10 @@
             $left = 0;
             $right = 0;
             $bottom = 0;
+
             // Top
             for ($y=0;$y<$height;$y++) {
+                if ($timelimit) {set_time_limit($timelimit);}
                 for ($x=0;$x<$width;$x++) {
                     $px++;
                     if ($this->gd_imagecolorat($x,$y)!=$reference) {
@@ -711,8 +737,10 @@
                     }
                 }
             }
+
             // Bottom
             for ($y=($height-1);$y>$top;$y--) {
+                if ($timelimit) {set_time_limit($timelimit);}
                 for ($x=0;$x<$width;$x++) {
                     $px++;
                     if ($this->gd_imagecolorat($x,$y)!=$reference) {
@@ -721,8 +749,10 @@
                     }
                 }
             }
+
             // Left
             for ($x=0;$x<$left;$x++) {
+                if ($timelimit) {set_time_limit($timelimit);}
                 for ($y=$top;$y<$bottom;$y++) {
                     $px++;
                     if ($this->gd_imagecolorat($x,$y)!=$reference) {
@@ -731,8 +761,10 @@
                     }
                 }
             }
+
             // Right
             for ($x=($width-1);$x>$left;$x--) {
+                if ($timelimit) {set_time_limit($timelimit);}
                 for ($y=$top;$y<$bottom;$y++) {
                     $px++;
                     if ($this->gd_imagecolorat($x,$y)!=$reference) {
@@ -741,21 +773,22 @@
                     }
                 }
             }
+
             // Replace source
             $new = imagecreatetruecolor($right-$left,$bottom-$top);
             imagealphablending($new,true);
             imagesavealpha($new,true);
-            imagefill($new,0,0,self::getColor($new,array(0,0,0,127)));
+            imagefill($new,0,0,static::getColor($new,array(0,0,0,127)));
             imagecopy($new,$this->resource(),0,0,$left,$top,$right-$left,$bottom-$top);
             $this->resource = $new;
-            if ($this->debug_mode) {
-                return array(
-                    'checked'=>$px,
-                    'original'=>($width*$height),
-                    'cropped'=>(imagesx($new)*imagesy($new)),
-                    'efficiency'=>((($width*$height)-($px+(imagesx($new)*imagesy($new))))/($width*$height))*100
-                );
-            }
+
+            // Return stats
+            return array(
+                'checked'=>$px,
+                'original'=>($width*$height),
+                'cropped'=>(imagesx($new)*imagesy($new)),
+                'efficiency'=>((($width*$height)-($px+(imagesx($new)*imagesy($new))))/($width*$height))*100,
+            );
         }
 
     /**
